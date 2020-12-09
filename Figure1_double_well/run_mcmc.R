@@ -29,7 +29,7 @@ double_well <- function(x, gamma, return_log = FALSE) {
 set.seed(1)
 
 # define model parameters
-gamma_vec <- c(1, 6.25, 10)
+gamma_vec <- c(1, 6.3, 10)
 mu_range <- c(-2, 2)
 
 # save parameters to file
