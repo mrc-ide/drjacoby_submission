@@ -49,7 +49,7 @@ col_vec <- drjacoby_cols()[c(2,4)]
 col_dens <- "black"
 
 # read in model parameters
-params <- readRDS("Figure1_double_well/output/model_params.rds")
+params <- readRDS("Figure_double_well/output/model_params.rds")
 gamma_vec <- params$gamma_vec
 mu_range <- params$mu_range
 mu_vec <- seq(mu_range[1], mu_range[2], l = 1001)
@@ -65,8 +65,8 @@ df_true <- do.call(rbind, mapply(function(i) {
 df_true$rep <- factor(df_true$rep, levels = sprintf("gamma = %s", gamma_vec))
 
 # read in MCMC output
-drj_list <- readRDS("Figure1_double_well/output/drj_list.rds")
-stan_list <- readRDS("Figure1_double_well/output/stan_list.rds")
+drj_list <- readRDS("Figure_double_well/output/drj_list.rds")
+stan_list <- readRDS("Figure_double_well/output/stan_list.rds")
 
 # get STAN data into plotting dataframe
 df_stan <- do.call(rbind, mapply(function(i) {
@@ -138,4 +138,4 @@ plot_combined <- plot_grid(plot_trace1,  plot_trace2, plot_dist, ncol = 3)
 plot_combined
 
 # save to file
-ggsave("Figure1_double_well/double_well.png", plot_combined, width = 8, height = 5)
+ggsave("Figure_double_well/double_well.png", plot_combined, width = 8, height = 5)
