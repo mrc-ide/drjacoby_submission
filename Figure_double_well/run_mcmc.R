@@ -35,7 +35,7 @@ mu_range <- c(-2, 2)
 # save parameters to file
 saveRDS(list(gamma_vec = gamma_vec,
              mu_range = mu_range),
-        "Figure1_double_well/output/model_params.rds")
+        "Figure_double_well/output/model_params.rds")
 
 # define R logprior function
 r_logprior <- function(params, misc) {
@@ -56,7 +56,7 @@ drj_list <- stan_list <- list()
 for (i in 1:3) {
 
   # run STAN MCMC
-  fit <- stan(file = 'Figure1_double_well/stan_models/double_well.stan',
+  fit <- stan(file = 'Figure_double_well/stan_models/double_well.stan',
               data = list(gamma = gamma_vec[i]), chains = 1)
   fit_extract <- extract(fit)
   stan_mcmc <- data.frame(iteration = 1:length(fit_extract$mu),
@@ -85,6 +85,6 @@ for (i in 1:3) {
 }
 
 # save to file
-saveRDS(stan_list, "Figure1_double_well/output/stan_list.rds")
-saveRDS(drj_list, "Figure1_double_well/output/drj_list.rds")
+saveRDS(stan_list, "Figure_double_well/output/stan_list.rds")
+saveRDS(drj_list, "Figure_double_well/output/drj_list.rds")
 
