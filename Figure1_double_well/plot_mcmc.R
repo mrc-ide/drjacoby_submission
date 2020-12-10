@@ -118,7 +118,7 @@ plot_dist <- plot_base +
 
 # produce trace plot from STAN
 plot_trace1 <- plot_base +
-  geom_line(aes(x = iteration, y = mu), size = trace_size, color = col_vec[1], data = df_stan) +
+  geom_point(aes(x = iteration, y = mu), size = trace_size, color = col_vec[1], data = df_stan) +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(limits = mu_range, expand = c(0, 0)) +
   facet_wrap(. ~rep, ncol = 1, strip.position = "left") +
   xlab("iteration") + ylab("x") +
@@ -127,7 +127,7 @@ plot_trace1 <- plot_base +
 
 # produce trace plot from drjacoby
 plot_trace2 <- plot_base +
-  geom_line(aes(x = iteration, y = mu), size = trace_size, color = col_vec[2], data = df_drj) +
+  geom_point(aes(x = iteration, y = mu), size = trace_size, color = col_vec[2], data = df_drj) +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(limits = mu_range, expand = c(0, 0)) +
   facet_wrap(. ~rep, ncol = 1, strip.position = "left") +
   xlab("iteration") + ylab("x") +
