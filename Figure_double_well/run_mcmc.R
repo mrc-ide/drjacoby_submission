@@ -26,10 +26,10 @@ double_well <- function(x, gamma, return_log = FALSE) {
 
 # ------------------------------------------------------------------
 
-set.seed(1)
+set.seed(2)
 
 # define model parameters
-gamma_vec <- c(1, 6.3, 10)
+gamma_vec <- c(1, 6.2, 20)
 mu_range <- c(-2, 2)
 
 # save parameters to file
@@ -44,47 +44,64 @@ r_logprior <- function(params, misc) {
 
 # define MCMC parameters
 burnin <- 1e3
-samples <- 1e3
-chains <- 1
-rungs <- 1
+samples <- 1e4
+rungs <- 10
 
 # define parameters dataframe
 df_params <- define_params(name = "mu", min = -2, max = 2)
 
 # loop through values of gamma
-drj_list <- stan_list <- list()
+drj_list_simple <- drj_list_rungs <- stan_list <- list()
 for (i in 1:3) {
-
+  
   # run STAN MCMC
   fit <- stan(file = 'Figure_double_well/stan_models/double_well.stan',
-              data = list(gamma = gamma_vec[i]), chains = 1)
+              data = list(gamma = gamma_vec[i]),
+              chains = 1,
+              seed = 1,
+              warmup = burnin,
+              iter = burnin + samples)
   fit_extract <- extract(fit)
   stan_mcmc <- data.frame(iteration = 1:length(fit_extract$mu),
                           mu = fit_extract$mu)
-
-
+  
+  
   # define R loglike function
   r_loglike <- function(theta, data, misc) {
     double_well(theta[1], gamma = gamma_vec[i], return_log = TRUE)
   }
-
-  # run drjacoby MCMC
-  drj_mcmc <- run_mcmc(data = list(x = -1),
-                       df_params = df_params,
-                       loglike = r_loglike,
-                       logprior = r_logprior,
-                       burnin = burnin,
-                       samples = samples,
-                       chains = chains,
-                       rungs = 20)
-
+  
+  # run drjacoby MCMC without rungs
+  drj_mcmc_simple <- run_mcmc(data = list(x = -1),
+                              df_params = df_params,
+                              loglike = r_loglike,
+                              logprior = r_logprior,
+                              burnin = burnin,
+                              samples = samples,
+                              chains = 1,
+                              rungs = 1)
+  
+  # run drjacoby MCMC with rungs
+  drj_mcmc_rungs <- run_mcmc(data = list(x = -1),
+                             df_params = df_params,
+                             loglike = r_loglike,
+                             logprior = r_logprior,
+                             burnin = burnin,
+                             samples = samples,
+                             chains = 1,
+                             rungs = 10)
+  
+  #plot_mc_acceptance(drj_mcmc_rungs)
+  
   # save to list
   stan_list[[i]] <- stan_mcmc
-  drj_list[[i]] <- drj_mcmc
-
+  drj_list_simple[[i]] <- drj_mcmc_simple
+  drj_list_rungs[[i]] <- drj_mcmc_rungs
+  
 }
 
 # save to file
 saveRDS(stan_list, "Figure_double_well/output/stan_list.rds")
-saveRDS(drj_list, "Figure_double_well/output/drj_list.rds")
+saveRDS(drj_list_simple, "Figure_double_well/output/drj_list_simple.rds")
+saveRDS(drj_list_rungs, "Figure_double_well/output/drj_list_rungs.rds")
 

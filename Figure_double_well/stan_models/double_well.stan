@@ -1,4 +1,4 @@
-// saved as 8schools.stan
+// saved as double_well.stan
 data {
   real gamma;
 }
