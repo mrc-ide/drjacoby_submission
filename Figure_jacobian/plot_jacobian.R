@@ -48,8 +48,8 @@ p2 <- ggplot() +
   geom_linerange(data = d1_transform, aes(x = x, y = y, xmin = xmin, xmax = xmax), size = 1, col = "darkblue") + 
   geom_point(data = o1, aes(x = x, y = y), shape = 18, size = 3, col = "darkred") +
   geom_curve(data = l4, aes(y = y, yend = y, x = x, xend = xend),
-             arrow = arrow(length = unit(0.01, "npc"), ends = "first", type = "closed"),
-             col = "darkred", curvature = 1, size = 1) +
+             arrow = arrow(length = unit(0.05, "npc"), ends = "first", type = "open"),
+             col = "darkred", curvature = 1, size = 0.8) +
   geom_segment(aes(x = 25, xend = 30, y = 0, yend = 0),  arrow = arrow(length = unit(0.2, "cm")), col = "darkblue", size = 1) + 
   geom_segment(aes(x = -25, xend = -30, y = 0, yend = 0),  arrow = arrow(length = unit(0.2, "cm")), col = "darkblue", size = 1) + 
   geom_text(aes(x = 30, y = -0.03), label = expression(infinity)) +
@@ -70,19 +70,19 @@ l3_transform_back <- l3 %>%
   mutate(x = get_theta(x)) %>%
   filter(x <=30, x >= -30)
 
-p3 <- ggplot() +
-  geom_line(dat = l3_transform_back, aes(x = x, y = y), col = "springgreen1") +
-  geom_linerange(data = d1_transform_back, aes(x = x, y = y, xmin = xmin, xmax = xmax), size = 1, col = "darkblue") + 
-  geom_point(data = d1_transform_back, aes(x = x, y = y), shape = 18, size = 3, col = "darkred") +
+p3 <- ggplot(data = d1_transform_back, aes(x = x, y = y, xmin = xmin, xmax = xmax)) +
+  #geom_line(dat = l3_transform_back, aes(x = x, y = y), col = "springgreen1") +
+  geom_linerange(size = 1, col = "darkblue") + 
+  geom_point(shape = 18, size = 3, col = "darkred") +
   geom_segment(aes(x = 25, xend = 30, y = 0, yend = 0),  arrow = arrow(length = unit(0.2, "cm")), col = "darkblue", size = 1) + 
-  geom_text(aes(x = 30, y = -0.03), label = expression(infinity)) +
-  geom_text(aes(x = 0, y = -0.03), label = "0") +
+  geom_text(x = 30, y = -0.02, label = expression(infinity)) +
+  geom_text(x = 0, y = -0.02, label = "0") +
   scale_x_continuous(limits = c(-30, 30)) +
   theme_void() +
   ggtitle("3. Backtransform, accept/reject")
 ################################################################################
 
 ### Combine and save ###########################################################
-p <- (p1 / p2 / p3) + plot_layout(heights = c(1, 1.5, 1.5))
+p <- (p1 / p2 / p3) + plot_layout(heights = c(1, 1.5, 1))
 ggsave("Figure_jacobian/jacobian.png", p, height = 4, width = 7, dpi = 500)
 ################################################################################
