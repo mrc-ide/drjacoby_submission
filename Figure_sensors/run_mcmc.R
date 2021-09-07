@@ -67,7 +67,7 @@ ll <- function(params, data, misc){
   t1 <- sum(dnorm(data$y, pred_y[d$known == 1], 0.02, log = TRUE))
   # Of making those observations | distances
   t2 <- sum(bernoulli(0.3, pred_y[d$known == 1]))
-  # TODO: Of not making observations | distances - not sure this one is right
+  # Not observations | distances 
   t3 <- sum(bernoulli(1 - 0.3, pred_y[d$known == 0]))
 
   t1 + t2 + t3
