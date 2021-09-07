@@ -1,17 +1,21 @@
 
-# .R
+# plot_coupling.R
 #
 # Author: Bob Verity
 # Date: 2020-12-09
 #
 # Purpose:
-# (this is an example header)
+# Takes the output of sim_coupling.R and produces a ggplot schematic of how the
+# chain moves through temperature rungs.
 #
 # ------------------------------------------------------------------
 
 # load bobfunctions2 package. If not already installed this can be obtained from
 # Github via the command devtools::install_github('bobverity/bobfunctions2')
 library(bobfunctions2)
+
+# load other packages
+library(ggplot2)
 
 # define double well plotting function
 double_well <- function(x, gamma) {
@@ -115,7 +119,7 @@ plot1 <- plot1 +
                arrow = arrow(length = unit(0.25, "cm")), data = df_arrow_proj[1,]) +
   geom_segment(aes(x = x, xend = x2, y = y, yend = y2, col = group), size = 1.5,
                arrow = arrow(length = unit(0.25, "cm")), data = df_arrow_proj[nrow(df_arrow_proj),]) +
-  scale_color_manual(values = df_col$col, guide = FALSE)
+  scale_color_manual(values = df_col$col, guide = "none")
 plot1
 
 
@@ -150,7 +154,7 @@ plot1 <- plot1 +
   geom_line(aes(x = x, y = y, col = group, group = group), data = df_curves) +
   geom_polygon(aes(x = x, y = y, fill = as.factor(rung)),
                col = NA, alpha = 0.3, data = df_curves) +
-  scale_fill_manual(values = df_col$col[match(1:rungs, df_col$y)], guide = FALSE)
+  scale_fill_manual(values = df_col$col[match(1:rungs, df_col$y)], guide = "none")
 plot1
 
 # save to file

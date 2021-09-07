@@ -1,14 +1,19 @@
 
-# .R
+# sim_coupling.R
 #
 # Author: Bob Verity
 # Date: 2020-12-09
 #
 # Purpose:
-# (this is an example header)
+# Simulates data that will be used in schematic figure showing how parallel
+# tempering works. Does not use drjacoby pacakge, rather implements a basic
+# standalone MCMC (this allows us to extract all the bits and pieces we need).
+# Underlying model is a double-well likelihood, parameterised to give a suitable
+# depth of valley in the cold chain. Results are saved to file to be plotted in
+# a separate script.
 #
 # ------------------------------------------------------------------
-set.seed(9)
+set.seed(9) # choose seed to produce pretty results
 
 # define double well log-likelihood, up to constant of proportionality
 f1 <- function(x, gamma) {
