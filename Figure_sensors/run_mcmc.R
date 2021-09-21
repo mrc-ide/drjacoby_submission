@@ -6,7 +6,7 @@
 # Purpose:
 # Run MCMC in drjacoby for the sensor location example
 #
-# Reference:
+# References:
 # Hyungsuk Tak, Xiao-Li Meng & David A. van Dyk (2018) A Repelling–Attracting
 # Metropolis Algorithm for Multimodality, Journal of Computational and Graphical Statistics, 27:3,
 # 479-490, DOI: 10.1080/10618600.2017.1415911
@@ -22,25 +22,15 @@ location = data.frame(i = c(2, 1, 2, 1, 3, 1, 3),
 # Observed distances (the order matters for use in the likelihood)
 data <- list(y = c(0.2970, 0.9266, 0.8524, 0.6103, 0.2995, 0.3631, 0.5656))
 
-# Define parameter dataframe
-params <- define_params(name = "x1", min = -10, max = 10, init = 0.5,
-                        name = "y1", min = -10, max = 10, init = 0.5,
-                        name = "x2", min = -10, max = 10, init = 0.5,
-                        name = "y2", min = -10, max = 10, init = 0.5,
-                        name = "x3", min = -10, max = 10, init = 0.5,
-                        name = "y3", min = -10, max = 10, init = 0.5,
-                        name = "x4", min = -10, max = 10, init = 0.5,
-                        name = "y4", min = -10, max = 10, init = 0.5)
-
-# Euclidean distance between two locations
-dist <- function(xi, xj) {
-  sqrt(sum((xi - xj) ^ 2))
-}
-
-# Bernoulli log-likelihood
-bernoulli = function(theta, x) {
-  log(theta) * sum(x) + log(1 - theta) * (length(x) - sum(x))
-}
+# Define parameter data.frame
+params <- define_params(name = "x1", min = -3, max = 3,
+                        name = "y1", min = -3, max = 3,
+                        name = "x2", min = -3, max = 3,
+                        name = "y2", min = -3, max = 3,
+                        name = "x3", min = -3, max = 3,
+                        name = "y3", min = -3, max = 3,
+                        name = "x4", min = -3, max = 3,
+                        name = "y4", min = -3, max = 3)
 
 # Pre-calculate grid of unique sensor pairs
 d <- expand.grid(i = 1:6, j = 1:6)
@@ -51,26 +41,23 @@ pairs <- list(d = d)
 
 # log-Likelihood
 ll <- function(params, data, misc){
-
+  
   # Coordinates of sensors (4 unknown that we estimate and 2 known locations)
   coors <- matrix(c(params, 0.5, 0.3, 0.3 ,0.7), ncol = 2, byrow = TRUE)
   # Pairs
   d <- misc$d
-
-  # Predicted distances
-  pred_y <- c()
-  for(i in 1:nrow(d)){
-    pred_y[i] <- dist(unlist(coors[d$i[i],]), unlist(coors[d$j[i],]))
-  }
-
-  # Comparing observed and estimated distances
-  t1 <- sum(dnorm(data$y, pred_y[d$known == 1], 0.02, log = TRUE))
-  # Of making those observations | distances
-  t2 <- sum(bernoulli(0.3, pred_y[d$known == 1]))
-  # Not observations | distances 
-  t3 <- sum(bernoulli(1 - 0.3, pred_y[d$known == 0]))
-
-  t1 + t2 + t3
+  
+  # Predicted Euclidean distances between pairs of sensors
+  pred_y <- as.matrix(dist(coors))[cbind(d$i, d$j)]
+  
+  # Comparing observed and estimated distances between sensors
+  ll1 <- sum(dnorm(data$y, pred_y[d$known == 1], 0.02, log = TRUE))
+  
+  # Assume the the probability of observing a nearby sensor falls exponentially with distance
+  prob_y <- exp(-((pred_y^2) / (2 * 0.3 ^ 2)))
+  ll2 <- sum(dbinom(d$known, 1, prob_y, log = TRUE))
+  
+  ll1 + ll2
 }
 
 # Simple diffuse prior on each coordinate
