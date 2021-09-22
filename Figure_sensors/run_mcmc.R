@@ -15,6 +15,8 @@
 # Load packages
 library(drjacoby)
 
+set.seed(98765)
+
 # Distance between sensor subscripts
 location = data.frame(i = c(2, 1, 2, 1, 3, 1, 3),
                       j = c(3, 4, 4, 5, 5, 6, 6))
@@ -23,14 +25,17 @@ location = data.frame(i = c(2, 1, 2, 1, 3, 1, 3),
 data <- list(y = c(0.2970, 0.9266, 0.8524, 0.6103, 0.2995, 0.3631, 0.5656))
 
 # Define parameter data.frame
-params <- define_params(name = "x1", min = -3, max = 3,
-                        name = "y1", min = -3, max = 3,
-                        name = "x2", min = -3, max = 3,
-                        name = "y2", min = -3, max = 3,
-                        name = "x3", min = -3, max = 3,
-                        name = "y3", min = -3, max = 3,
-                        name = "x4", min = -3, max = 3,
-                        name = "y4", min = -3, max = 3)
+params1 <- define_params(name = "x1", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "y1", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "x2", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "y2", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "x3", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "y3", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "x4", min = -10, max = 10, init = runif(20, -1, 1),
+                        name = "y4", min = -10, max = 10, init = runif(20, -1, 1))
+# duplicate parameter data.frame with first init values for PT
+params2 <- params1
+params2$init <- sapply(params2$init, function(x){x[1]})
 
 # Pre-calculate grid of unique sensor pairs
 d <- expand.grid(i = 1:6, j = 1:6)
@@ -65,10 +70,10 @@ lp <- function(params, misc){
   sum(dnorm(params, 0, 10, log = TRUE))
 }
 
-set.seed(98765)
+
 # Run the mcmc with tempering
 sensor_output <- run_mcmc(data = data,
-                          df_params = params,
+                          df_params = params1,
                           loglike = ll,
                           logprior = lp,
                           misc = pairs,
@@ -78,7 +83,7 @@ sensor_output <- run_mcmc(data = data,
 
 # Run the mcmc with tempering
 sensor_output_tempered <- run_mcmc(data = data,
-                                   df_params = params,
+                                   df_params = params2,
                                    loglike = ll,
                                    logprior = lp,
                                    misc = pairs,
@@ -86,7 +91,7 @@ sensor_output_tempered <- run_mcmc(data = data,
                                    samples = 1e4,
                                    chains = 1,
                                    GTI_pow = 5,
-                                   rungs = 20)
+                                   rungs = 30)
 
 # Save output
 saveRDS(sensor_output, "Figure_sensors/output/sensor_output.RDS")

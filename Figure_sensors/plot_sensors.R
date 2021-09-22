@@ -24,7 +24,7 @@ sensor_output <- readRDS("Figure_sensors/output/sensor_output.RDS")
 sensor_output_tempered <- readRDS("Figure_sensors/output/sensor_output_tempered.RDS")
 
 # Plot Metropolis coupling acceptance rates
-plot_mc_acceptance(sensor_output_tempered)
+plot_mc_acceptance(sensor_output_tempered, x_axis_type = 2)
 
 # Plotting function
 p <- function(d, n, x, y, lims){
