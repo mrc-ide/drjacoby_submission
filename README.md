@@ -15,3 +15,6 @@ Scripts to carry out all analysis and reproduce tables and figures for the drjac
 
 ![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_sensors/sensors.png)
 
+## Figure: schematic
+
+![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_schematic/Schematic.png)
