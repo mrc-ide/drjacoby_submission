@@ -7,9 +7,9 @@
 # Plotting MCMC in drjacoby for the sensor location example
 #
 # Reference:
-  # Hyungsuk Tak, Xiao-Li Meng & David A. van Dyk (2018) A Repelling–Attracting
-  # Metropolis Algorithm for Multimodality, Journal of Computational and Graphical Statistics, 27:3,
-  # 479-490, DOI: 10.1080/10618600.2017.1415911
+# Hyungsuk Tak, Xiao-Li Meng & David A. van Dyk (2018) A Repelling–Attracting
+# Metropolis Algorithm for Multimodality, Journal of Computational and Graphical Statistics, 27:3,
+# 479-490, DOI: 10.1080/10618600.2017.1415911
 # ------------------------------------------------------------------
 
 
@@ -22,9 +22,98 @@ library(dplyr)
 # Load mcmc output
 sensor_output <- readRDS("Figure_sensors/output/sensor_output.RDS")
 sensor_output_tempered <- readRDS("Figure_sensors/output/sensor_output_tempered.RDS")
+sampled_grid.RDS <- readRDS("Figure_sensors/output/sampled_grid.RDS")
 
-# Plot Metropolis coupling acceptance rates
-plot_mc_acceptance(sensor_output_tempered, x_axis_type = 2)
+# Which sensor to plot:
+sensor <- 2
+xname <- paste0("x", sensor)
+yname <- paste0("y", sensor)
+
+chain_order <- paste(c(21, 22, 23, 24, 25, 16, 17, 18, 19, 20, 11, 12, 13, 14, 15, 6, 7, 8, 9, 10, 1, 2, 3, 4,5))
+
+# Extract starting positions
+sp <- data.frame(x = unlist(params1[params1$name == xname, "init"]),
+                 y = unlist(params1[params1$name == yname, "init"])) %>%
+  mutate(chain = 1:25,
+         chain = factor(chain, levels = chain_order))
+
+mcmc <- sensor_output$output %>%
+  mutate(type = "MCMC") %>%
+  filter(phase == "sampling") %>%
+  select(all_of(c("chain", "type", xname, yname))) %>%
+  mutate(chain = factor(chain, levels = chain_order))
+colnames(mcmc) <- c("chain", "type", "x", "y")
+
+pt <- sensor_output_tempered$output %>%
+  mutate(type = "PT MCMC") %>%
+  filter(phase == "sampling") %>%
+  select(all_of(c("chain", "type", xname, yname))) %>%
+  mutate(chain = factor(chain, levels = chain_order))
+colnames(pt) <- c("chain", "type", "x", "y")
+
+# Make sure we plot the same number of samples
+combined <- bind_rows(mcmc, pt) %>%
+  select(-chain)
+# Mix up samples for plotting
+combined_sub <- bind_rows(slice_sample(mcmc, n = nrow(pt)), pt) %>%
+  select(-chain)
+combined_sub <- combined_sub[sample(nrow(combined_sub)),]
+
+
+# Plot grid of MCMC chains
+dgrid <- ggplot() + 
+  geom_point(data = slice_sample(combined, n = 2000), aes(x = x, y = y), col = "grey") +
+  geom_hex(data = mcmc, aes(x = x, y = y, fill = ..density..), bins = 100) +
+  geom_point(data = sp, aes(x = x, y = y), col = "darkcyan", fill = "cyan2", shape = 21, size = 2) +
+  theme_bw() +
+  scale_fill_continuous(type = "viridis") +
+  facet_wrap(~ chain, nrow = 5) + 
+  theme(strip.background = element_blank(),
+    strip.text.x = element_blank())
+
+# X coordinate density
+dx <- ggplot(combined, aes(x = x, fill = type, col = type)) + 
+  geom_density(alpha = 0.3) +
+  theme_bw() +
+  scale_y_reverse() +
+  theme(
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "none"
+  )
+# Y coordinate density
+dy <- ggplot(combined, aes(x = y, fill = type, col = type)) + 
+  geom_density(alpha = 0.3) +
+  theme_bw() +
+  coord_flip() +
+  theme(
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = "none"
+  )
+# XY overlay
+dxy <- ggplot(combined_sub, aes(x = x, y = y, col = type)) +
+  geom_point(size = 1, alpha = 0.2) +
+  theme_bw()
+
+combo <- dxy + dy + dx + guide_area() + plot_layout(guides = 'collect')
+sensor_plot <- dgrid | combo
+
+sensor_plot
+
+
+
+ggplot(mcmc, aes(x = x)) + 
+  geom_density(alpha = 0.3)
+
+dx
+
+
+
+
+
 
 # Plotting function
 p <- function(d, n, x, y, lims){
@@ -39,7 +128,7 @@ p <- function(d, n, x, y, lims){
 # Get standard plot limits
 limits <- sensor_output_tempered$output
 limits <- limits[round(seq(1, nrow(limits), length.out = 2000)), ]
-limits <- limits[limits$phase == "sampling" & limits$rung == 10, 7:14]
+limits <- limits[limits$phase == "sampling", 6:13]
 limits <- apply(limits, 2, range)
 limits[1,] <- limits[1,] - 0.1
 limits[2,] <- limits[2,] + 0.1
