@@ -1,4 +1,17 @@
+# Author: Pete Winskill
+# Date: 2021-09027
+#
+# Purpose:
+# Run MCMC in drjacoby for the sensor location example
+#
+# Inspired by the following work:
+# Hyungsuk Tak, Xiao-Li Meng & David A. van Dyk (2018) A Repelling–Attracting
+# Metropolis Algorithm for Multimodality, Journal of Computational and Graphical Statistics, 27:3,
+# 479-490, DOI: 10.1080/10618600.2017.1415911
+# ------------------------------------------------------------------
 
+
+# Load packages
 library(drjacoby)
 library(dplyr)
 library(ggplot2)
@@ -6,33 +19,42 @@ library(tidyr)
 library(furrr)
 library(patchwork)
 
-set.seed(123987)
+# Set seed to reproduce results exactly
+set.seed(123456789)
 
-# Define parameter data.frame
+# Define starting position grid
 s <- seq(-4, 4, length.out = 4)
 init_x <- rep(s, 4)
 init_y <- rep(s, each = 4)
-params_mcmc <- define_params(name = "x1", min = -10, max = 10, init = init_x, 
-                             name = "y1", min = -10, max = 10, init = init_y, 
-                             name = "x2", min = -10, max = 10, init = init_x, 
-                             name = "y2", min = -10, max = 10, init = init_y)
-params_pt_mcmc <- define_params(name = "x1", min = -10, max = 10, init = init_x[1],
-                                name = "y1", min = -10, max = 10, init = init_y[1],
-                                name = "x2", min = -10, max = 10, init = init_x[1],
-                                name = "y2", min = -10, max = 10, init = init_y[1])
 
+# Define parameters data.frame
+params_mcmc <- define_params(name = "x3", min = -10, max = 10, init = init_x, 
+                             name = "y3", min = -10, max = 10, init = init_y, 
+                             name = "x4", min = -10, max = 10, init = init_x, 
+                             name = "y4", min = -10, max = 10, init = init_y)
+params_pt_mcmc <- define_params(name = "x3", min = -10, max = 10, init = init_x[1],
+                                name = "y3", min = -10, max = 10, init = init_y[1],
+                                name = "x4", min = -10, max = 10, init = init_x[1],
+                                name = "y4", min = -10, max = 10, init = init_y[1])
+
+# Source c++ log likelihood and log prior functions
 Rcpp::sourceCpp("Figure_sensors/sensors.cpp")
 
+# Define data. Observed distance between sensor 1 and 3, 2 and 3 and 3 and 4 
+  # Sensors 1 and 2 have known locations at c(0, 1) and c(1, 0)
+  # Based observed distance we know that sensor 3 can only be in two locations (1.5, 1) or (0, -0.5) 
+  # with sensor 4 having possible rings of locations surrounding those coordinates
 data <- list(
   y = c(1.5, sqrt(1^2 + 0.5^2), 1.4)
 )
 
+# Run standard MCMC
 sensor_output <- run_mcmc(data = data,
                           df_params = params_mcmc,
                           loglike = "loglike",
                           logprior = "logprior",
-                          burnin = 1e3,
-                          samples = 5e4,
+                          burnin = 1e4,
+                          samples = 1e5,
                           chains = 16)
 
 # Run the mcmc with tempering
@@ -40,83 +62,64 @@ sensor_output_tempered <- run_mcmc(data = data,
                                    df_params = params_pt_mcmc,
                                    loglike = "loglike",
                                    logprior = "logprior",
-                                   burnin = 1e3,
-                                   samples = 5e4,
+                                   burnin = 1e4,
+                                   samples = 1e5,
                                    chains = 1,
-                                   GTI_pow = 3,
+                                   GTI_pow = 4,
                                    rungs = 16)
-
+# View mc acceptance rates
 plot_mc_acceptance(sensor_output_tempered)
+
+# Save output
 saveRDS(sensor_output, "Figure_sensors/output/sensor_output.RDS")
 saveRDS(sensor_output_tempered, "Figure_sensors/output/sensor_output_tempered.RDS")
 
-# True possible positions of sensor 1
-sensor11 <- c(1.5, 1)
-sensor12 <- c(0, -0.5)
-
-td1 <- sensor_output$output %>%
-  filter(phase == "sampling") %>%
-  mutate(type = "mcmc")
-td2 <- sensor_output_tempered$output %>%
-  filter(phase == "sampling") %>%
-  mutate(type = "ptmcmc")
-td <- bind_rows(td1, td2)
-
-ggplot(td, aes(x = x2, fill = type)) + 
-  geom_density(alpha = 0.2)
-ggplot(td, aes(x = y2, fill = type)) + 
-  geom_density(alpha = 0.2)
-
 ## Grid search #################################################################
 
-# Note this will require a decent amount of memory (can reduce resolution)
-
+# Note: this is memory hungry
 res = 0.05
 grid <- bind_rows(
   expand_grid(
-    x1 = seq(-1, 2, res),
-    y1 = seq(-1, 2, res),
-    x2 = seq(-2, 3.5, res),
-    y2 = seq(-2.5, 3, res)
+    x3 = seq(-1, 2, res),
+    y3 = seq(-1, 2, res),
+    x4 = seq(-2, 3.5, res),
+    y4 = seq(-2.5, 3, res)
   )
 )
-nrow(grid) / 1e6
 
-ll_lp <- function(x1, y1, x2, y2, data){
-  p <- c(x1 = x1, y1 = y1, x2 = x2, y2 = y2)
+# A function to evaluate the log-likelihood + logprior
+ll_lp <- function(x3, y3, x4, y4, data){
+  p <- c(x3 = x3, y3 = y3, x4 = x4, y4 = y4)
   loglike(p, data, list()) + logprior(p, list())
 }
 
+# Apply to grid (parallelised)
 future::plan(multicore)
 out <- unlist(future_pmap(grid, ll_lp, data = data))
+# Exponentiate:
 grid$p <- exp(out)
 
-pd <- grid %>%
-  group_by(x2, y2) %>%
-  summarise(p = mean(p))
-
-ggplot(pd, aes(x = x2, y = y2, fill = p))+
-  geom_tile()+
-  scale_fill_viridis_c()
-
+# Sample the grid based on the probability
 sampled_grid <- grid[sample(1:nrow(grid), 100000, replace = TRUE, prob = grid$p),]
 saveRDS(sampled_grid, "Figure_sensors/output/sampled_grid.RDS")
 ################################################################################
 
 ### Plotting ###################################################################
+
+# Plotting individual chains
 chain_order <- paste(c(13:16, 9:12, 5:8, 1:4))
 
 chain_plot_data <- sensor_output$output %>%
   filter(phase == "sampling") %>%
   mutate(type = "MCMC") %>%
   mutate(chain = factor(chain, levels = chain_order))
-starting_point_data <- data.frame(x2 = init_x, y2 = init_y, chain = 1:16) %>%
+starting_point_data <- data.frame(x4 = init_x, y4 = init_y, chain = 1:16) %>%
   mutate(chain = factor(chain, levels = chain_order))
 
 chain_plot <- ggplot() +
-  geom_point(data = slice_sample(sampled_grid, n = 2000), aes(x = x2, y = y2), col = "grey", size = 0.1) +
-  geom_hex(data = chain_plot_data, aes(x = x2, y = y2, fill = ..density..), bins = 100) +
-  geom_point(data = starting_point_data, aes(x = x2, y = y2), col = "darkcyan", fill = "cyan2", shape = 21, size = 2) +
+  geom_point(data = slice_sample(sampled_grid, n = 2000), aes(x = x4, y = y4), col = "grey", size = 0.1) +
+  geom_hex(data = chain_plot_data, aes(x = x4, y = y4, fill = ..density..), bins = 100) +
+  geom_point(data = starting_point_data, aes(x = x4, y = y4), col = "darkcyan", fill = "cyan2", shape = 21, size = 2) +
   theme_bw() +
   scale_fill_continuous(type = "viridis") +
   facet_wrap(~ chain, nrow = 5) + 
@@ -135,7 +138,7 @@ posterior_plot_data <- chain_plot_data %>%
 posterior_plot_data <- posterior_plot_data[sample(nrow(posterior_plot_data)),]
 # XY overlay
 dxy <- ggplot() +
-  geom_point(data = posterior_plot_data, aes(x = x2, y = y2, col = type), size = 0.5, alpha = 0.2) +
+  geom_point(data = slice_sample(posterior_plot_data, n = 50000), aes(x = x4, y = y4, col = type), size = 0.5, alpha = 0.2) +
   geom_line(aes(x = 0, y = 0, linetype = "True", group = 1)) +
   scale_linetype_manual(values =  2) +
   theme_bw() +
@@ -144,8 +147,8 @@ dxy <- ggplot() +
 
 # X density
 dx <- ggplot() + 
-  geom_density(data = posterior_plot_data, aes(x = x2, fill = type, col = type), alpha = 0.3, bw = 0.1) +
-  geom_density(data = sampled_grid, aes(x = x2), col = "black", lty = 2, bw = 0.1) +
+  geom_density(data = posterior_plot_data, aes(x = x4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
+  geom_density(data = sampled_grid, aes(x = x4), col = "black", lty = 2, bw = 0.1) +
   theme_bw() +
   scale_y_reverse() +
   theme(
@@ -156,8 +159,8 @@ dx <- ggplot() +
   )
 # Y density
 dy <- ggplot() + 
-  geom_density(data = posterior_plot_data, aes(x = y2, fill = type, col = type), alpha = 0.3, bw = 0.1) +
-  geom_density(data = sampled_grid, aes(x = y2), col = "black", lty = 2, bw = 0.1) +
+  geom_density(data = posterior_plot_data, aes(x = y4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
+  geom_density(data = sampled_grid, aes(x = y4), col = "black", lty = 2, bw = 0.1) +
   theme_bw() +
   coord_flip() +
   theme(
@@ -167,7 +170,9 @@ dy <- ggplot() +
     legend.position = "none"
   )
 
+# Combine plots
 combo <- dxy + dy + dx + guide_area() + plot_layout(guides = 'collect')
 sensor_plot <- chain_plot | combo
 
+# Save plot
 ggsave("Figure_sensors/sensors.png", sensor_plot, dpi = 600, height = 5, width = 9)

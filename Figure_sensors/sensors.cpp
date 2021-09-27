@@ -9,9 +9,9 @@ double dist(double x1, double y1, double x2, double y2){
 // [[Rcpp::export]]
 SEXP loglike(Rcpp::NumericVector params, Rcpp::List data, Rcpp::List misc) {
   // Distances
-  double d1 = dist(params["x1"], params["y1"], 0, 1);
-  double d2 = dist(params["x1"], params["y1"], 1, 0);
-  double d3 = dist(params["x1"], params["y1"], params["x2"], params["y2"]);
+  double d1 = dist(params["x3"], params["y3"], 0, 1);
+  double d2 = dist(params["x3"], params["y3"], 1, 0);
+  double d3 = dist(params["x3"], params["y3"], params["x4"], params["y4"]);
   
   // sum log-likelihood over all data
   // unpack data
@@ -28,10 +28,10 @@ SEXP loglike(Rcpp::NumericVector params, Rcpp::List data, Rcpp::List misc) {
 // [[Rcpp::export]]
 SEXP logprior(Rcpp::NumericVector params, Rcpp::List misc) {
   double ret = 0.0;
-  ret += R::dnorm(params["x1"], 0, 10, true);
-  ret += R::dnorm(params["y1"], 0, 10, true);
-  ret += R::dnorm(params["x2"], 0, 10, true);
-  ret += R::dnorm(params["y2"], 0, 10, true);
+  ret += R::dnorm(params["x3"], 0, 10, true);
+  ret += R::dnorm(params["y3"], 0, 10, true);
+  ret += R::dnorm(params["x4"], 0, 10, true);
+  ret += R::dnorm(params["y4"], 0, 10, true);
   return Rcpp::wrap(ret);
 }
 
