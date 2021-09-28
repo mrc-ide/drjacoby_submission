@@ -183,5 +183,7 @@ ggsave("Figure_sensors/sensors.png", sensor_plot, dpi = 600, height = 5, width =
 
 
 # Sensor 3 plot for SI
-sensor_3 <- plot_cor(sensor_output, "x3", "y3")
+sensor_3 <- plot_cor(sensor_output, "x3", "y3") +
+  xlab("x") + 
+  ylab("y")
 ggsave("Figure_sensors/SI_sensors_3.png", sensor_3, dpi = 600, height = 4, width = 4)
