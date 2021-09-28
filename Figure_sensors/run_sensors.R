@@ -106,6 +106,10 @@ saveRDS(sampled_grid, "Figure_sensors/output/sampled_grid.RDS")
 
 ### Plotting ###################################################################
 
+sensor_output <- readRDS("Figure_sensors/output/sensor_output.RDS")
+sensor_output_tempered <- readRDS("Figure_sensors/output/sensor_output_tempered.RDS")
+sampled_grid <- readRDS("Figure_sensors/output/sampled_grid.RDS")
+
 # Plotting individual chains
 chain_order <- paste(c(13:16, 9:12, 5:8, 1:4))
 
@@ -172,7 +176,7 @@ dy <- ggplot() +
 
 # Combine plots
 combo <- dxy + dy + dx + guide_area() + plot_layout(guides = 'collect')
-sensor_plot <- chain_plot | combo
+sensor_plot <- (chain_plot | combo) + plot_annotation(tag_levels = "A")
 
 # Save plot
 ggsave("Figure_sensors/sensors.png", sensor_plot, dpi = 600, height = 5, width = 9)
