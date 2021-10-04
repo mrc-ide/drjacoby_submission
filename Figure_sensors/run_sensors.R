@@ -125,12 +125,15 @@ chain_plot <- ggplot() +
   geom_hex(data = chain_plot_data, aes(x = x4, y = y4, fill = ..density..), bins = 100) +
   geom_point(data = starting_point_data, aes(x = x4, y = y4), col = "darkcyan", fill = "cyan2", shape = 21, size = 2) +
   theme_bw() +
-  scale_fill_continuous(type = "viridis") +
+  scale_fill_continuous(type = "viridis", name = "Density") +
   facet_wrap(~ chain, nrow = 5) + 
   xlab("x") +
   ylab("y") +
   theme(strip.background = element_blank(),
-        strip.text.x = element_blank())
+        strip.text.x = element_blank(),
+        legend.title = element_text(size = 9), 
+        legend.text = element_text(size = 7), 
+        aspect.ratio = 1)
 
 pt_mcmc_plot_data <- sensor_output_tempered$output %>%
   filter(phase == "sampling") %>%
@@ -176,10 +179,10 @@ dy <- ggplot() +
 
 # Combine plots
 combo <- dxy + dy + dx + guide_area() + plot_layout(guides = 'collect')
-sensor_plot <- (chain_plot | combo) + plot_annotation(tag_levels = "A")
+sensor_plot <- (chain_plot | combo) + plot_annotation(tag_levels = "A") + plot_layout(widths = c(0.7, 0.7))
 
 # Save plot
-ggsave("Figure_sensors/sensors.png", sensor_plot, dpi = 600, height = 5, width = 9)
+ggsave("Figure_sensors/sensors.png", sensor_plot, dpi = 600, height = 4, width = 8)
 
 
 # Sensor 3 plot for SI
