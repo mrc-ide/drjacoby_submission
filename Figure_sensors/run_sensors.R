@@ -65,7 +65,7 @@ sensor_output_tempered <- run_mcmc(data = data,
                                    burnin = 1e4,
                                    samples = 1e5,
                                    chains = 1,
-                                   GTI_pow = 4,
+                                   alpha = 4,
                                    rungs = 16)
 # View mc acceptance rates
 plot_mc_acceptance(sensor_output_tempered)
