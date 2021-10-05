@@ -115,7 +115,7 @@ chain_order <- paste(c(13:16, 9:12, 5:8, 1:4))
 
 chain_plot_data <- sensor_output$output %>%
   filter(phase == "sampling") %>%
-  mutate(type = "MCMC") %>%
+  mutate(type = "Standard") %>%
   mutate(chain = factor(chain, levels = chain_order))
 starting_point_data <- data.frame(x4 = init_x, y4 = init_y, chain = 1:16) %>%
   mutate(chain = factor(chain, levels = chain_order))
@@ -123,9 +123,9 @@ starting_point_data <- data.frame(x4 = init_x, y4 = init_y, chain = 1:16) %>%
 chain_plot <- ggplot() +
   geom_point(data = slice_sample(sampled_grid, n = 2000), aes(x = x4, y = y4), col = "grey", size = 0.1) +
   geom_hex(data = chain_plot_data, aes(x = x4, y = y4, fill = ..density..), bins = 100) +
-  geom_point(data = starting_point_data, aes(x = x4, y = y4), col = "darkcyan", fill = "cyan2", shape = 21, size = 2) +
+  geom_point(data = starting_point_data, aes(x = x4, y = y4), col = "#f9c22e", fill = "#f9c22e", shape = 21, size = 2) +
   theme_bw() +
-  scale_fill_continuous(type = "viridis", name = "Density") +
+  scale_fill_viridis_c(option = "A") +
   facet_wrap(~ chain, nrow = 5) + 
   xlab("x") +
   ylab("y") +
@@ -137,7 +137,7 @@ chain_plot <- ggplot() +
 
 pt_mcmc_plot_data <- sensor_output_tempered$output %>%
   filter(phase == "sampling") %>%
-  mutate(type = "PT MCMC") %>%
+  mutate(type = "PT") %>%
   mutate(chain = factor(chain, levels = chain_order))
 posterior_plot_data <- chain_plot_data %>%
   slice_sample(n = nrow(pt_mcmc_plot_data)) %>%
@@ -147,6 +147,7 @@ posterior_plot_data <- posterior_plot_data[sample(nrow(posterior_plot_data)),]
 dxy <- ggplot() +
   geom_point(data = slice_sample(posterior_plot_data, n = 50000), aes(x = x4, y = y4, col = type), size = 0.5, alpha = 0.2) +
   geom_line(aes(x = 0, y = 0, linetype = "True", group = 1)) +
+  scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
   scale_linetype_manual(values =  2) +
   theme_bw() +
   guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1))) +
@@ -156,6 +157,8 @@ dxy <- ggplot() +
 dx <- ggplot() + 
   geom_density(data = posterior_plot_data, aes(x = x4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
   geom_density(data = sampled_grid, aes(x = x4), col = "black", lty = 2, bw = 0.1) +
+  scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
+  scale_fill_manual(values = c("#53b3cb", "#cc282b")) +
   theme_bw() +
   scale_y_reverse() +
   theme(
@@ -168,6 +171,8 @@ dx <- ggplot() +
 dy <- ggplot() + 
   geom_density(data = posterior_plot_data, aes(x = y4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
   geom_density(data = sampled_grid, aes(x = y4), col = "black", lty = 2, bw = 0.1) +
+  scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
+  scale_fill_manual(values = c("#53b3cb", "#cc282b")) +
   theme_bw() +
   coord_flip() +
   theme(
