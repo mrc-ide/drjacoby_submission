@@ -16,10 +16,11 @@ library(drjacoby)
 
 # load other packages
 library(rstan)
+library(magrittr)
 
 # double well function
 double_well <- function(x, gamma, return_log = FALSE) {
-  ret <- -gamma*(x^2-1)^2
+  ret <- -gamma*(x^2 - 1)^2
   if (!return_log) {
     ret <- exp(ret)
   }
@@ -31,12 +32,12 @@ double_well <- function(x, gamma, return_log = FALSE) {
 set.seed(2)
 
 # define model parameters
-gamma_vec <- c(1, 6.2, 7, 20)
+gamma_vec <- c(1, 5, 10, 15, 20)
 mu_range <- c(-2, 2)
 
 # define MCMC parameters
 burnin <- 1e4
-samples <- 1e4
+samples <- 1e5
 rungs <- 10
 
 # define parameters dataframe
@@ -51,24 +52,38 @@ res_df <- data.frame(gamma = gamma_vec,
                      stan_sample = NA,
                      stan_eval = NA,
                      stan_ESS = NA,
-                     stan_correct = NA,
+                     stan_mean = NA,
+                     stan_Q2.5 = NA,
+                     stan_Q97.5 = NA,
                      stan_long_warmup = NA,
                      stan_long_sample = NA,
                      stan_long_eval = NA,
                      stan_long_ESS = NA,
-                     stan_long_correct = NA,
+                     stan_long_mean = NA,
+                     stan_long_Q2.5 = NA,
+                     stan_long_Q97.5 = NA,
+                     naive_internal = NA,
                      naive_eval = NA,
                      naive_ESS = NA,
-                     naive_correct = NA,
+                     naive_mean = NA,
+                     naive_Q2.5 = NA,
+                     naive_Q97.5 = NA,
+                     naive_long_internal = NA,
                      naive_long_eval = NA,
                      naive_long_ESS = NA,
-                     naive_long_correct = NA,
+                     naive_long_mean = NA,
+                     naive_long_Q2.5 = NA,
+                     naive_long_Q97.5 = NA,
+                     PT_internal = NA,
                      PT_eval = NA,
                      PT_ESS = NA,
-                     PT_correct = NA)
+                     PT_mean = NA,
+                     PT_Q2.5 = NA,
+                     PT_Q97.5 = NA)
 
 # loop through values of gamma
 for (i in seq_along(gamma_vec)) {
+  message(sprintf("gamma = %s", gamma_vec[i]))
   
   # ----------------------------
   # STAN
@@ -81,19 +96,19 @@ for (i in seq_along(gamma_vec)) {
               seed = 1,
               warmup = burnin,
               iter = burnin + samples)
-  Sys.time() - t0
+  t1 <- Sys.time() - t0
   
   # get various run-times
   res_df$stan_warmup[i] <- get_elapsed_time(fit)[1]
   res_df$stan_sample[i] <- get_elapsed_time(fit)[2]
-  res_df$stan_eval[i] <- Sys.time() - t0
+  res_df$stan_eval[i] <- t1
   
-  # get ESS
+  # get ESS and postior estimates
   fit_summary <- as.data.frame(summary(fit)$summary)
   res_df$stan_ESS[i] <- fit_summary$n_eff[1]
-  
-  # find out if true mean (0) is inside 95% CI
-  res_df$stan_correct[i] <- (fit_summary$`2.5%`[1] < 0) & (fit_summary$`97.5%`[1] > 0)
+  res_df$stan_mean[i] <- fit_summary$mean[1]
+  res_df$stan_Q2.5[i] <- fit_summary$`2.5%`[1]
+  res_df$stan_Q97.5[i] <- fit_summary$`97.5%`[1]
   
   # ----------------------------
   # STAN for longer
@@ -106,19 +121,19 @@ for (i in seq_along(gamma_vec)) {
                    seed = 1,
                    warmup = burnin * rungs,
                    iter = (burnin + samples) * rungs)
-  Sys.time() - t0
+  t1 <- Sys.time() - t0
   
   # get various run-times
   res_df$stan_long_warmup[i] <- get_elapsed_time(fit_long)[1]
   res_df$stan_long_sample[i] <- get_elapsed_time(fit_long)[2]
-  res_df$stan_long_eval[i] <- Sys.time() - t0
+  res_df$stan_long_eval[i] <- t1
   
-  # get ESS
+  # get ESS and posterior estimates
   fit_summary <- as.data.frame(summary(fit_long)$summary)
   res_df$stan_long_ESS[i] <- fit_summary$n_eff[1]
-  
-  # find out if true mean (0) is inside 95% CI
-  res_df$stan_long_correct[i] <- (fit_summary$`2.5%`[1] < 0) & (fit_summary$`97.5%`[1] > 0)
+  res_df$stan_long_mean[i] <- fit_summary$mean[1]
+  res_df$stan_long_Q2.5[i] <- fit_summary$`2.5%`[1]
+  res_df$stan_long_Q97.5[i] <- fit_summary$`97.5%`[1]
   
   # ----------------------------
   # Naive (drjacoby without rungs)
@@ -133,20 +148,25 @@ for (i in seq_along(gamma_vec)) {
                          samples = samples,
                          chains = 1,
                          rungs = 1)
-  Sys.time() - t0
+  t1 <- Sys.time() - t0
   
   # get various run-times
-  res_df$naive_eval[i] <- Sys.time() - t0
+  res_df$naive_internal[i] <- sum(drj_simple$diagnostics$run_time$seconds)
+  res_df$naive_eval[i] <- t1
   
-  # get ESS
+  # get ESS and posterior estimates
   res_df$naive_ESS[i] <- drj_simple$diagnostics$ess[1]
-  
-  # find out if true mean (0) is inside 95% CI
+  m <- drj_simple$output %>%
+    dplyr::filter(phase == "sampling") %>%
+    dplyr::pull("mu") %>%
+    mean()
   q <- drj_simple$output %>%
     dplyr::filter(phase == "sampling") %>%
     dplyr::pull("mu") %>%
     quantile(probs = c(0.025, 0.975))
-  res_df$naive_correct[i] <- (q[1] < 0) & (q[2] > 0)
+  res_df$naive_mean[i] <- m
+  res_df$naive_Q2.5[i] <- q[1]
+  res_df$naive_Q97.5[i] <- q[2]
   
   # ----------------------------
   # Naive for longer
@@ -161,20 +181,25 @@ for (i in seq_along(gamma_vec)) {
                               samples = samples *rungs,
                               chains = 1,
                               rungs = 1)
-  Sys.time() - t0
+  t1 <- Sys.time() - t0
   
   # get various run-times
-  res_df$naive_long_eval[i] <- Sys.time() - t0
+  res_df$naive_long_internal[i] <- sum(drj_simple_long$diagnostics$run_time$seconds)
+  res_df$naive_long_eval[i] <- t1
   
-  # get ESS
+  # get ESS and posterior estimates
   res_df$naive_long_ESS[i] <- drj_simple_long$diagnostics$ess[1]
-  
-  # find out if true mean (0) is inside 95% CI
+  m <- drj_simple_long$output %>%
+    dplyr::filter(phase == "sampling") %>%
+    dplyr::pull("mu") %>%
+    mean()
   q <- drj_simple_long$output %>%
     dplyr::filter(phase == "sampling") %>%
     dplyr::pull("mu") %>%
     quantile(probs = c(0.025, 0.975))
-  res_df$naive_long_correct[i] <- (q[1] < 0) & (q[2] > 0)
+  res_df$naive_long_mean[i] <- m
+  res_df$naive_long_Q2.5[i] <- q[1]
+  res_df$naive_long_Q97.5[i] <- q[2]
   
   # ----------------------------
   # Parallel Tempering (drjacoby with rungs)
@@ -189,27 +214,43 @@ for (i in seq_along(gamma_vec)) {
                              samples = samples,
                              chains = 1,
                              rungs = rungs)
-  Sys.time() - t0
+  t1 <- Sys.time() - t0
   
   # get various run-times
-  res_df$PT_eval[i] <- Sys.time() - t0
+  res_df$PT_internal[i] <- sum(drj_mcmc_rungs$diagnostics$run_time$seconds)
+  res_df$PT_eval[i] <- t1
   
-  # get ESS
+  # get ESS and posterior estimates
   res_df$PT_ESS[i] <- drj_mcmc_rungs$diagnostics$ess[1]
-  
-  # find out if true mean (0) is inside 95% CI
+  m <- drj_mcmc_rungs$output %>%
+    dplyr::filter(phase == "sampling") %>%
+    dplyr::pull("mu") %>%
+    mean()
   q <- drj_mcmc_rungs$output %>%
     dplyr::filter(phase == "sampling") %>%
-    dplyr::filter(rung == rungs) %>%
     dplyr::pull("mu") %>%
     quantile(probs = c(0.025, 0.975))
-  res_df$PT_correct[i] <- (q[1] < 0) & (q[2] > 0)
+  res_df$PT_mean[i] <- m
+  res_df$PT_Q2.5[i] <- q[1]
+  res_df$PT_Q97.5[i] <- q[2]
+  
 }
 
-res_df
+#View(res_df)
+
+# create simplified version of full results
+res_simple <- res_df %>%
+  dplyr::mutate(stan_long_internal = stan_long_warmup + stan_long_sample) %>%
+  dplyr::select(gamma,
+                naive_long_internal, naive_long_eval, naive_long_ESS, naive_long_mean, naive_long_Q2.5, naive_long_Q97.5,
+                stan_long_internal, stan_long_eval, stan_long_ESS, stan_long_mean, stan_long_Q2.5, stan_long_Q97.5,
+                PT_internal, PT_eval, PT_ESS, PT_mean, PT_Q2.5, PT_Q97.5) %>%
+  signif(digits = 3)
 
 # write to file
 write.csv(res_df, "Table_double_well/output/table_double_well.csv",
+          quote = FALSE, row.names = FALSE)
+write.csv(res_simple, "Table_double_well/output/table_double_well_simple.csv",
           quote = FALSE, row.names = FALSE)
 
 
