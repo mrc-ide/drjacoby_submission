@@ -5,7 +5,7 @@ Scripts to carry out all analysis and reproduce tables and figures for the drjac
 
 ## Figure: schematic
 
-![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_schematic/Schematic.png)
+![schematic](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_schematic/Schematic.png)
 
 ## Figure: infographic
 
@@ -17,13 +17,13 @@ Scripts to carry out all analysis and reproduce tables and figures for the drjac
 
 ## Figure: sensors
 
-![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_sensors/sensors.png)
+![sensors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_sensors/sensors.png)
 
 ## Figure: protein
 
-![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_protein_mixture/plot_mixture_combined.png)
+![protein](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_protein_mixture/plot_mixture_combined.png)
 
 ## Figure: Jabocian
 
-![sesors](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_jacobian/plot_jacobian.png)
+![jacobian](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_jacobian/plot_jacobian.png)
 
