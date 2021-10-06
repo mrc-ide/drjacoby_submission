@@ -21,9 +21,9 @@ Scripts to carry out all analysis and reproduce tables and figures for the drjac
 
 ## Figure: protein
 
-![protein](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_protein_mixture/plot_mixture_combined.png)
+![protein](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_protein_mixture/protein_mixture_combined.png)
 
 ## Figure: Jabocian
 
-![jacobian](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_jacobian/plot_jacobian.png)
+![jacobian](https://raw.githubusercontent.com/mrc-ide/drjacoby_submission/main/Figure_jacobian/jacobian.png)
 
