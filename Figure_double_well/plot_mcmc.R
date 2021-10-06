@@ -42,15 +42,11 @@ double_well_norm <- function(x, gamma, x_range, return_log = FALSE) {
 # ------------------------------------------------------------------
 
 # define plotting parameters
-trace_iterations <- 1e3
-bw <- c(0.05, 0.02, 0.01)  # smoothing bandwidth
-trace_size <- 0.1  # size of lines in trace plots
-dens_size <- 0.7  # size of lines in density plot
-dens_ylim <- c(0, 0.07)  # y-axis limits of density plot
-col_vec <- brewer.pal(6, "Paired")[c(2, 4, 6)]
-#bobfunctions2::col_plot(col_vec)
+bw <- c(0.05, 0.02, 0.01)  # smoothing bandwidth of density plot
+dens_size <- 0.7           # size of lines in density plot
+dens_ylim <- c(0, 0.07)    # y-axis limits of density plot
+col_vec <- c("#cc282b", "#344cd5", "#53b3cb")
 col_dens <- grey(0.6)
-col_strip <- grey(0.9)
 
 # read in model parameters
 params <- readRDS("Figure_double_well/output/model_params.rds")
@@ -74,6 +70,7 @@ drj_list_simple <- readRDS("Figure_double_well/output/drj_list_simple.rds")
 drj_list_rungs <- readRDS("Figure_double_well/output/drj_list_rungs.rds")
 stan_list <- readRDS("Figure_double_well/output/stan_list.rds")
 
+# ----------------------------
 
 # get STAN data into plotting dataframe
 df_stan <- do.call(rbind, mapply(function(i) {
@@ -82,7 +79,6 @@ df_stan <- do.call(rbind, mapply(function(i) {
   data.frame(mu = d$x, y = d$y, model = model_levels[i])
 }, 1:3, SIMPLIFY = FALSE))
 df_stan$model <- factor(df_stan$model, levels = model_levels)
-
 
 # get simple drjacoby data into plotting dataframe
 df_drj_simple <- do.call(rbind, mapply(function(i) {
@@ -94,73 +90,70 @@ df_drj_simple <- do.call(rbind, mapply(function(i) {
 df_drj_simple$model <- factor(df_drj_simple$model, levels = model_levels)
 
 # get tempered drjacoby data into plotting dataframe
-rungs <- max(drj_list_rungs[[1]]$output$rung)
 df_drj_rungs <- do.call(rbind, mapply(function(i) {
-  x <- subset(drj_list_rungs[[i]]$output, phase == "sampling" & rung == rungs)
+  x <- subset(drj_list_rungs[[i]]$output, phase == "sampling")
   mu <- x$mu
   d <- density(mu, from = -2, to = 2, bw = bw[i])
   data.frame(mu = d$x, y = d$y, model = model_levels[i])
 }, 1:3, SIMPLIFY = FALSE))
 df_drj_rungs$model <- factor(df_drj_rungs$model, levels = model_levels)
 
-# ----------------------------
-
-# produce base plot
-plot_base <- ggplot() + theme_bw() + theme(strip.background = element_rect(fill = col_strip))
-
 # produce density plot
-plot_dist <- plot_base +
+plot_dist <- ggplot() + theme_bw() +
   geom_area(aes(x = mu, y = 250*y), col = NA, fill = col_dens, size = dens_size, data = df_true) +
   geom_line(aes(x = mu, y = y), col = col_vec[1], data = df_drj_simple) +
   geom_line(aes(x = mu, y = y), col = col_vec[2], data = df_stan) +
   geom_line(aes(x = mu, y = y), col = col_vec[3], data = df_drj_rungs) +
   scale_x_continuous(limits = mu_range, expand = c(0, 0)) +
-  #scale_y_continuous(limits = dens_ylim, expand = c(0, 0)) +
   facet_wrap(. ~model, ncol = 1, strip.position = "left", scales = "free_y") +
-  xlab("x") + ylab("probability") +
-  ggtitle("Posterior density")
+  xlab("mu") + ylab("Probability") +
+  ggtitle("Posterior density") +
+  theme(strip.background = element_rect(fill = "white"),
+        panel.spacing.y = unit(1, "lines")) +
+  labs(tag = "B")
 
-# produce trace plot from drjacoby without rungs
-trace_draws <- do.call(rbind, mapply(function(i) {
-  ret <- subset(drj_list_simple[[i]]$output, phase == "sampling")
-  ret$model = factor(model_levels[i], levels = model_levels)
-  ret
+# ----------------------------
+
+# get posterior draws into single dataframe over models
+df_trace <- do.call(rbind, mapply(function(i) {
+  
+  # extract results for this gamma
+  df_standard <- drj_list_simple[[i]]$output %>%
+    dplyr::mutate(model = "Standard")
+  df_PT <- drj_list_rungs[[i]]$output %>%
+    dplyr::mutate(model = "PT")
+  df_stan <- stan_list[[i]] %>%
+    dplyr::mutate(model = "HMC")
+  
+  # combine
+  df_standard %>%
+    dplyr::bind_rows(df_PT) %>%
+    dplyr::filter(phase == "sampling") %>%
+    dplyr::select(iteration, mu, model) %>%
+    dplyr::mutate(iteration = iteration - min(iteration) + 1) %>%
+    dplyr::bind_rows(df_stan) %>%
+    dplyr::mutate(gamma = sprintf("gamma = %s", gamma_vec[i]),
+                  model = factor(model, levels = c("Standard", "HMC", "PT")))
 }, 1:3, SIMPLIFY = FALSE))
-plot_trace1 <- plot_base +
-  geom_point(aes(x = iteration, y = mu), size = trace_size, color = col_vec[1], data = trace_draws) +
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(limits = mu_range, expand = c(0, 0)) +
-  facet_wrap(. ~model, ncol = 1, strip.position = "left") +
-  xlab("iteration") + ylab("x") +
-  ggtitle("Naive")
 
-# produce trace plot from STAN
-trace_draws <- do.call(rbind, mapply(function(i) {
-  ret <- stan_list[[i]]
-  ret$model = factor(model_levels[i], levels = model_levels)
-  ret
-}, 1:3, SIMPLIFY = FALSE))
-plot_trace2 <- plot_base +
-  geom_point(aes(x = iteration, y = mu), size = trace_size, color = col_vec[2], data = trace_draws) +
+# produce combined trace plot
+plot_trace <- df_trace %>%
+  ggplot() + theme_bw() +
+  geom_point(aes(x = iteration, y = mu, col = model), size = 0.1) +
+  facet_grid(gamma ~ model, switch = "y") +
   scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(limits = mu_range, expand = c(0, 0)) +
-  facet_wrap(. ~model, ncol = 1, strip.position = "left") +
-  xlab("iteration") + ylab("x") +
-  ggtitle("HMC")
+  scale_color_manual(values = col_vec) +
+  xlab("Iteration") +
+  theme(strip.background = element_rect(fill = "white"),
+        legend.position = "none",
+        panel.spacing.y = unit(1, "lines")) +
+  ggtitle("Trace plots") +
+  labs(tag = "A")
 
-# produce trace plot from drjacoby with rungs
-trace_draws <- do.call(rbind, mapply(function(i) {
-  ret <- subset(drj_list_rungs[[i]]$output, phase == "sampling" & rung == rungs)
-  ret$model = factor(model_levels[i], levels = model_levels)
-  ret
-}, 1:3, SIMPLIFY = FALSE))
-plot_trace3 <- plot_base +
-  geom_point(aes(x = iteration, y = mu), size = trace_size, color = col_vec[3], data = trace_draws) +
-  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(limits = mu_range, expand = c(0, 0)) +
-  facet_wrap(. ~model, ncol = 1, strip.position = "left") +
-  xlab("iteration") + ylab("x") +
-  ggtitle("Parallel tempering")
+# ----------------------------
 
-# arrange in grid
-plot_combined <- plot_grid(plot_trace1,  plot_trace2, plot_trace3, plot_dist, nrow = 1)
+# produce combined plot
+plot_combined <- plot_grid(plot_trace, plot_dist, nrow = 1, rel_widths = c(3, 1))
 plot_combined
 
 # save to file

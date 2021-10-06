@@ -1,0 +1,66 @@
+---
+title: "MCMC diagnostics"
+author: "Bob Verity"
+date: "08/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(magrittr)
+library(drjacoby)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+library(tidyr)
+```
+
+```{r, echo=FALSE}
+for (K in 2:15) {
+  
+  # read in drjacoby project
+  mcmc_rungs <- readRDS(sprintf("/Users/rverity/Desktop/protein_mixture_output/TAGM_rungs_%s", K))
+  
+  # extract data
+  dat <- mcmc_rungs$parameters$data %>%
+    as.data.frame()
+  
+  # subset to sampling iterations
+  mcmc_samples <- mcmc_rungs$output %>%
+    dplyr::filter(phase == "sampling")
+  
+  # get parameters into long format and fix name
+  param_names <- c(sprintf("mu%s_x", 1:K), sprintf("mu%s_y", 1:K))
+  mcmc_long <- mcmc_samples %>%
+    dplyr::select(chain, all_of(param_names)) %>%
+    tidyr::pivot_longer(all_of(param_names)) %>%
+    dplyr::mutate(name = substr(name, nchar(name), nchar(name)))
+  
+  # split x and y back into separate columns
+  df_plot <- mcmc_long %>%
+    dplyr::filter(name == "x") %>%
+    dplyr::mutate(x = value) %>%
+    dplyr::select(chain, x)
+  df_plot$y <- subset(mcmc_long, name == "y")$value
+  
+  # ------------------------------------------------------------------
+  
+  # plot values over rungs
+  plot1 <- plot_rung_loglike(mcmc_rungs, y_axis_type = 3) +
+    ggtitle(sprintf("K = %s", K)) +
+    theme(plot.title = element_text(size = 30, face = "bold"))
+  plot2 <- plot_mc_acceptance(mcmc_rungs)
+  
+  # plot data and component means
+  plot3 <- ggplot() + theme_bw() +
+    geom_point(aes(x = x, y = y), col = grey(0.8), size = 0.5, data = dat) +
+    geom_point(aes(x = x, y = y, col = as.factor(chain)), size = 0.5, data = df_plot)
+  
+  print(plot1)
+  print(plot2)
+  print(plot3)
+}
+```

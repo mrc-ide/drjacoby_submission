@@ -30,4 +30,4 @@ mydata <- Biobase::exprs(markersubset)
 
 # save to file. This dataset is large so processed data will be kept out of the
 # Git repos. Other users will need to alter this filepath manually
-saveRDS(mydata, file = "/Users/rverity/Desktop/hyperLOPIT2015_processed.rds")
+saveRDS(mydata, file = "Figure_protein_mixture/output/hyperLOPIT2015_processed.rds")

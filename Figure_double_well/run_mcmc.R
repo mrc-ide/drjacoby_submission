@@ -29,7 +29,7 @@ double_well <- function(x, gamma, return_log = FALSE) {
 set.seed(2)
 
 # define model parameters
-gamma_vec <- c(1, 6.2, 20)
+gamma_vec <- c(1, 10, 20)
 mu_range <- c(-2, 2)
 
 # save parameters to file
@@ -61,7 +61,7 @@ for (i in 1:3) {
               seed = 1,
               warmup = burnin,
               iter = burnin + samples)
-  fit_extract <- extract(fit)
+  fit_extract <- rstan::extract(fit)
   stan_mcmc <- data.frame(iteration = 1:length(fit_extract$mu),
                           mu = fit_extract$mu)
   
