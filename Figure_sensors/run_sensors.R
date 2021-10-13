@@ -149,7 +149,9 @@ dxy <- ggplot() +
   scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
   scale_linetype_manual(values =  2) +
   theme_bw() +
-  guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+  guides(colour = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
+  xlab("x") +
+  ylab("y") +
   theme(legend.title = element_blank())
 
 # X density
