@@ -20,7 +20,7 @@ library(furrr)
 library(patchwork)
 
 # Set seed to reproduce results exactly
-set.seed(123456789)
+set.seed(12345678910)
 
 # Define starting position grid
 s <- seq(-4, 4, length.out = 4)
@@ -125,7 +125,7 @@ chain_plot <- ggplot() +
   geom_hex(data = chain_plot_data, aes(x = x4, y = y4, fill = ..density..), bins = 100) +
   geom_point(data = starting_point_data, aes(x = x4, y = y4), col = "#f9c22e", fill = "#f9c22e", shape = 21, size = 2) +
   theme_bw() +
-  scale_fill_viridis_c(option = "A") +
+  scale_fill_viridis_c(option = "A", name = "Density") +
   facet_wrap(~ chain, nrow = 5) + 
   xlab("x") +
   ylab("y") +
@@ -146,7 +146,6 @@ posterior_plot_data <- posterior_plot_data[sample(nrow(posterior_plot_data)),]
 # XY overlay
 dxy <- ggplot() +
   geom_point(data = slice_sample(posterior_plot_data, n = 50000), aes(x = x4, y = y4, col = type), size = 0.5, alpha = 0.2) +
-  geom_line(aes(x = 0, y = 0, linetype = "True", group = 1)) +
   scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
   scale_linetype_manual(values =  2) +
   theme_bw() +
@@ -155,10 +154,9 @@ dxy <- ggplot() +
 
 # X density
 dx <- ggplot() + 
-  geom_density(data = posterior_plot_data, aes(x = x4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
-  geom_density(data = sampled_grid, aes(x = x4), col = "black", lty = 2, bw = 0.1) +
+  geom_density(data = sampled_grid, aes(x = x4), fill = "grey", col = NA, bw = 0.1) +
+  geom_density(data = posterior_plot_data, aes(x = x4, col = type), alpha = 0.3, bw = 0.1, size = 1) +
   scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
-  scale_fill_manual(values = c("#53b3cb", "#cc282b")) +
   theme_bw() +
   scale_y_reverse() +
   theme(
@@ -169,10 +167,9 @@ dx <- ggplot() +
   )
 # Y density
 dy <- ggplot() + 
-  geom_density(data = posterior_plot_data, aes(x = y4, fill = type, col = type), alpha = 0.3, bw = 0.1) +
-  geom_density(data = sampled_grid, aes(x = y4), col = "black", lty = 2, bw = 0.1) +
+  geom_density(data = sampled_grid, aes(x = x4), fill = "grey", col = NA, bw = 0.1) +
+  geom_density(data = posterior_plot_data, aes(x = x4, col = type), alpha = 0.3, bw = 0.1, size = 1) +
   scale_colour_manual(values = c("#53b3cb", "#cc282b")) +
-  scale_fill_manual(values = c("#53b3cb", "#cc282b")) +
   theme_bw() +
   coord_flip() +
   theme(
