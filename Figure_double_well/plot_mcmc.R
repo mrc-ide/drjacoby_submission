@@ -138,6 +138,7 @@ df_trace <- do.call(rbind, mapply(function(i) {
 
 # produce combined trace plot
 plot_trace <- df_trace %>%
+  dplyr::mutate(gamma = factor(gamma, levels = sprintf("gamma = %s", gamma_vec))) %>%
   ggplot() + theme_bw() +
   geom_point(aes(x = iteration, y = mu, col = model), size = 0.1) +
   facet_grid(gamma ~ model, switch = "y") +
