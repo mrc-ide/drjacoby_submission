@@ -8,8 +8,6 @@
 #
 # ------------------------------------------------------------------
 
-
-
 # read in plotting grobs
 plot1 <- readRDS("Figure_protein_mixture/output/protein_mixture_means_plot.rds") +
   labs(tag = "A")

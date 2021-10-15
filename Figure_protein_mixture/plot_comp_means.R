@@ -67,7 +67,8 @@ plot1 <- ggplot() + theme_bw() +
              cols = vars(model_name),
              switch = "y") +
   theme(strip.background = element_rect(fill = "white"),
-        legend.position = "bottom")
+        legend.position = "bottom",
+        panel.spacing.x = unit(1, "lines"))
 plot1
 
 # save plot grob to file
