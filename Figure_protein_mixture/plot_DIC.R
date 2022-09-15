@@ -39,7 +39,8 @@ plot1 <- df_res %>%
   dplyr::rename(Standard = DIC_standard,
                 PT = DIC_PT) %>%
   tidyr::pivot_longer(cols = -K) %>%
-  dplyr::mutate(name = factor(name, levels = c("Standard", "PT"))) %>%
+  dplyr::mutate(name = c("Basic MH", "PT")[match(name, c("Standard", "PT"))]) %>%
+  dplyr::mutate(name = factor(name, levels = c("Basic MH", "PT"))) %>%
   ggplot(aes(x = K, y = value, col = name)) + theme_bw() +
   geom_line() + geom_point() +
   scale_color_manual(values = col_vec) +

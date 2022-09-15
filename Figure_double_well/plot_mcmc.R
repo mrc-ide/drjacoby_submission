@@ -119,7 +119,7 @@ df_trace <- do.call(rbind, mapply(function(i) {
   
   # extract results for this gamma
   df_standard <- drj_list_simple[[i]]$output %>%
-    dplyr::mutate(model = "Standard")
+    dplyr::mutate(model = "Basic MH")
   df_PT <- drj_list_rungs[[i]]$output %>%
     dplyr::mutate(model = "PT")
   df_stan <- stan_list[[i]] %>%
@@ -133,7 +133,7 @@ df_trace <- do.call(rbind, mapply(function(i) {
     dplyr::mutate(iteration = iteration - min(iteration) + 1) %>%
     dplyr::bind_rows(df_stan) %>%
     dplyr::mutate(gamma = sprintf("gamma = %s", gamma_vec[i]),
-                  model = factor(model, levels = c("Standard", "HMC", "PT")))
+                  model = factor(model, levels = c("Basic MH", "HMC", "PT")))
 }, 1:3, SIMPLIFY = FALSE))
 
 # produce combined trace plot

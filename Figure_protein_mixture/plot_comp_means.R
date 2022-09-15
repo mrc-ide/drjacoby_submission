@@ -53,8 +53,8 @@ df_plot <- data.frame(model = tmp$model,
                       y = subset(mcmc_long, name == "y")$value)
 
 # format plotting names
-df_plot$model_name <- c("Standard", "PT")[match(df_plot$model, c("basic", "rungs"))]
-df_plot$model_name <- factor(df_plot$model_name, levels = c("Standard", "PT"))
+df_plot$model_name <- c("Basic MH", "PT")[match(df_plot$model, c("basic", "rungs"))]
+df_plot$model_name <- factor(df_plot$model_name, levels = c("Basic MH", "PT"))
 df_plot$chain_name <- sprintf("Chain %s", df_plot$chain)
 
 # plot
